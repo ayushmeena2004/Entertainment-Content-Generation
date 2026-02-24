@@ -49,30 +49,55 @@ def clear_all_memory():
         return f"Error: {str(e)}"
 
 def generate_script(scene_topic, tone, retries=3, delay=5):
-    """Generates script using RAG with a retry loop."""
-    # 1. Retrieve Context
-    results = collection.query(query_texts=[scene_topic], n_results=3)
+    """
+    Generates a full multi-scene script using RAG. 
+    Enforces vertical dialogue stacking and real film story structure.
+    """
+    # 1. Retrieve Context (Increased k to 5 to capture more character/world lore)
+    results = collection.query(query_texts=[scene_topic], n_results=5)
     docs = results.get('documents', [[]])[0]
-    context_text = "\n".join(docs) if docs else "No specific character context found."
+    context_text = "\n".join(docs) if docs else "No specific character context found. Use industry archetypes."
 
-    # 2. Build Prompt
+    # 2. Build the "Hollywood Standard" Master Prompt
+    # This ensures multiple scenes are generated and dialogue is stacked vertically.
     prompt = (
-        f"Role: Professional Screenwriter. \n"
-        f"Tone: {tone}. \n"
-        f"Context from Memory: {context_text} \n"
-        f"Task: Write a script scene about: {scene_topic}"
+        f"ROLE: Professional Hollywood Screenwriter and Script Doctor.\n\n"
+        f"TASK: Write a complete, multi-scene script based on: {scene_topic}.\n\n"
+        f"CONTEXT FROM CHARACTER DATABASE:\n{context_text}\n\n"
+        f"TONE: {tone}\n\n"
+        f"STRICT FORMATTING RULES (MANDATORY):\n"
+        f"1. SCENES: Generate the entire story segment in one response. Use 'SCENE 1', 'SCENE 2', etc.\n"
+        f"2. SLUGLINES: Every new location must start with a bold line: **INT. LOCATION - TIME**.\n"
+        f"3. ACTION: Present tense, vivid, max 3 lines per block. Focus on character tics found in context.\n"
+        f"4. VERTICAL DIALOGUE (REAL FILM FORMAT):\n"
+        f"   - CHARACTER NAME in ALL CAPS on its own line.\n"
+        f"   - Parenthetical (e.g., emotional cue) on its own line BELOW the name.\n"
+        f"   - Dialogue on its own line BELOW the parenthetical.\n"
+        f"5. NO QUOTATION MARKS: Do not use quotes around speech.\n"
+        f"6. WHITE SPACE: Add a blank line between different character turns and action blocks.\n"
+        f"7. TRANSITION: End the entire script with 'FADE OUT.'\n\n"
+        f"VERTICAL FORMAT EXAMPLE:\n"
+        f"CHARACTER NAME\n"
+        f"(emotional cue)\n"
+        f"This is how the dialogue should look.\n"
     )
 
     # 3. Generate with Retry (Gemini 2.5 Flash)
     for attempt in range(retries):
         try:
+            # Use the most stable 2026 model for complex formatting
             response = client.models.generate_content(
                 model='gemini-2.5-flash', 
                 contents=prompt
             )
-            return response.text
+            
+            if response.text:
+                return response.text
+            return "Error: The model returned an empty response."
+
         except Exception as e:
+            # Handle Quota (429) or Network errors
             if "429" in str(e) and attempt < retries - 1:
                 time.sleep(delay)
                 continue
-            return f"Error: {str(e)}"
+            return f"Generation Error: {str(e)}"

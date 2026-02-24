@@ -2,9 +2,33 @@ import streamlit as st
 import rag_engine as brain
 import pandas as pd
 
-st.set_page_config(page_title="NoGAI-34: ScriptGen", layout="wide")
+st.set_page_config(page_title="ScriptCraft", layout="wide")
 
-st.title("🎬 NoGAI-34: Entertainment Content Generator")
+st.markdown("""
+    <style>
+    /* Force Courier font for the entire app to mimic a typewriter */
+    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Courier Prime', monospace;
+    }
+
+    /* Style the code block specifically for the script output */
+    .stCodeBlock {
+        background-color: #ffffff !important;
+        border: 1px solid #ddd !important;
+        padding: 20px !important;
+        color: #000000 !important;
+    }
+
+    /* Optional: Make the text area look more like a script page */
+    textarea {
+        font-family: 'Courier Prime', monospace !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🎬 ScriptCraft: Entertainment Content Generator")
 st.markdown("Build your character universe and generate scripts using **Gemini 2.5 Flash**.")
 
 col1, col2 = st.columns([1, 2])
