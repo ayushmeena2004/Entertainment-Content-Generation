@@ -6,15 +6,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Gemini Client
+
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Persistent ChromaDB
+
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 collection = chroma_client.get_or_create_collection(name="entertainment_context")
 
 def add_character_to_db(name, description):
-    """Saves character details into ChromaDB."""
+    
     try:
         unique_id = f"{name}_{int(time.time())}"
         collection.add(
@@ -27,7 +27,7 @@ def add_character_to_db(name, description):
         return f"Error saving to DB: {str(e)}"
 
 def get_all_characters():
-    """Retrieves all stored characters for the UI preview."""
+   
     try:
         results = collection.get()
         characters = []
@@ -38,7 +38,7 @@ def get_all_characters():
         return []
 
 def clear_all_memory():
-    """Wipes the database."""
+   
     try:
         all_ids = collection.get()['ids']
         if all_ids:
@@ -49,17 +49,13 @@ def clear_all_memory():
         return f"Error: {str(e)}"
 
 def generate_script(scene_topic, tone, retries=3, delay=5):
-    """
-    Generates a full multi-scene script using RAG. 
-    Enforces vertical dialogue stacking and real film story structure.
-    """
-    # 1. Retrieve Context (Increased k to 5 to capture more character/world lore)
+    
+  
     results = collection.query(query_texts=[scene_topic], n_results=5)
     docs = results.get('documents', [[]])[0]
     context_text = "\n".join(docs) if docs else "No specific character context found. Use industry archetypes."
 
-    # 2. Build the "Hollywood Standard" Master Prompt
-    # This ensures multiple scenes are generated and dialogue is stacked vertically.
+  
     prompt = (
         f"ROLE: Professional Hollywood Screenwriter and Script Doctor.\n\n"
         f"TASK: Write a complete, multi-scene script based on: {scene_topic}.\n\n"
@@ -82,7 +78,7 @@ def generate_script(scene_topic, tone, retries=3, delay=5):
         f"This is how the dialogue should look.\n"
     )
 
-    # 3. Generate with Retry (Gemini 2.5 Flash)
+  
     for attempt in range(retries):
         try:
             # Use the most stable 2026 model for complex formatting
